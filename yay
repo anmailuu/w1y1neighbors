@@ -1,0 +1,877 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neighbors</title>
+    <style>
+      :root {
+        --bg: #f6efe4;
+        --bg-deep: #ead8b8;
+        --paper: rgba(255, 250, 242, 0.86);
+        --paper-strong: #fffaf1;
+        --ink: #2b2118;
+        --muted: #6a594b;
+        --accent: #d1643f;
+        --accent-deep: #8f3f2b;
+        --teal: #2f7c7c;
+        --gold: #ecb84c;
+        --line: rgba(70, 45, 23, 0.15);
+        --shadow: 0 24px 50px rgba(88, 51, 20, 0.14);
+        --radius-xl: 28px;
+        --radius-lg: 20px;
+        --radius-md: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(236, 184, 76, 0.35), transparent 30%),
+          radial-gradient(circle at top right, rgba(47, 124, 124, 0.18), transparent 28%),
+          linear-gradient(180deg, #f3e5cd 0%, var(--bg) 38%, #f9f5ee 100%);
+      }
+
+      .page-shell {
+        width: min(1280px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 40px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.45fr 0.95fr;
+        gap: 22px;
+        margin-bottom: 24px;
+      }
+
+      .hero-copy,
+      .hero-card,
+      .game-panel,
+      .info-card {
+        background: var(--paper);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-copy {
+        border-radius: var(--radius-xl);
+        padding: 36px;
+      }
+
+      .eyebrow,
+      .panel-label,
+      .status-label,
+      .hero-card-label {
+        margin: 0 0 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--accent-deep);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        line-height: 1.05;
+      }
+
+      h1 {
+        font-size: clamp(3rem, 6vw, 5.4rem);
+        margin-bottom: 16px;
+      }
+
+      h2 {
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+      }
+
+      h3 {
+        font-size: 1.3rem;
+        margin-bottom: 14px;
+      }
+
+      .hero-text,
+      .info-card p,
+      .field-help,
+      .status-note,
+      .summary-line,
+      .rule-list,
+      ol {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .hero-card {
+        border-radius: var(--radius-xl);
+        padding: 28px;
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .hero-card ol {
+        margin: 0;
+        padding-left: 22px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.8fr);
+        gap: 24px;
+      }
+
+      .game-panel {
+        border-radius: var(--radius-xl);
+        padding: 28px;
+      }
+
+      .panel-head,
+      .side-card-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin: 24px 0;
+      }
+
+      .status-card,
+      .side-card {
+        background: var(--paper-strong);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 18px;
+      }
+
+      .spotlight {
+        background: linear-gradient(160deg, rgba(209, 100, 63, 0.14), rgba(236, 184, 76, 0.18));
+      }
+
+      .big-number {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+
+      .status-value {
+        font-size: 1.55rem;
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+
+      .board-wrap {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 18px;
+        align-items: start;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        padding: 14px;
+        border-radius: 24px;
+        background:
+          linear-gradient(180deg, rgba(47, 124, 124, 0.08), rgba(47, 124, 124, 0)),
+          var(--paper-strong);
+        border: 1px solid var(--line);
+      }
+
+      .cell {
+        aspect-ratio: 1;
+        border: 1px solid rgba(70, 45, 23, 0.18);
+        border-radius: 18px;
+        background: #fffdf8;
+        color: var(--ink);
+        font: inherit;
+        font-size: clamp(1.6rem, 3vw, 2.35rem);
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+
+      .cell:hover:enabled,
+      .cell:focus-visible {
+        transform: translateY(-2px);
+        border-color: rgba(209, 100, 63, 0.55);
+        box-shadow: 0 12px 24px rgba(209, 100, 63, 0.16);
+        outline: none;
+      }
+
+      .cell:disabled {
+        cursor: default;
+      }
+
+      .cell-filled {
+        background: linear-gradient(180deg, rgba(255, 242, 214, 0.92), rgba(255, 253, 248, 1));
+      }
+
+      .cell-row-score {
+        box-shadow: inset 0 0 0 3px rgba(236, 184, 76, 0.65);
+      }
+
+      .cell-col-score {
+        box-shadow: inset 0 0 0 3px rgba(47, 124, 124, 0.6);
+      }
+
+      .cell-both-score {
+        background:
+          linear-gradient(135deg, rgba(236, 184, 76, 0.26), rgba(47, 124, 124, 0.22)),
+          #fffdf8;
+        box-shadow: inset 0 0 0 3px rgba(143, 63, 43, 0.45);
+      }
+
+      .side-stack {
+        display: grid;
+        gap: 16px;
+      }
+
+      .sequence-strip {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .sequence-chip {
+        border-radius: 12px;
+        padding: 10px 0;
+        text-align: center;
+        font-weight: 800;
+        background: rgba(70, 45, 23, 0.06);
+        color: var(--muted);
+      }
+
+      .sequence-chip.done {
+        background: rgba(47, 124, 124, 0.12);
+        color: var(--teal);
+      }
+
+      .sequence-chip.current {
+        background: rgba(209, 100, 63, 0.16);
+        color: var(--accent-deep);
+        outline: 2px solid rgba(209, 100, 63, 0.25);
+      }
+
+      .button-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .button {
+        border: none;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        background: rgba(70, 45, 23, 0.08);
+        color: var(--ink);
+        transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+      }
+
+      .button:hover,
+      .button:focus-visible {
+        transform: translateY(-1px);
+        outline: none;
+      }
+
+      .button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .button-primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .button-secondary {
+        background: var(--teal);
+        color: white;
+        margin-top: 12px;
+      }
+
+      .field-label {
+        display: block;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        resize: vertical;
+        font: inherit;
+        background: #fffdf8;
+        color: var(--ink);
+      }
+
+      .message {
+        min-height: 1.4em;
+        margin: 10px 0 0;
+        color: var(--accent-deep);
+        font-weight: 700;
+      }
+
+      .badge {
+        background: rgba(70, 45, 23, 0.08);
+        color: var(--muted);
+        padding: 7px 10px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .score-explainer {
+        margin-top: 18px;
+        background: var(--paper-strong);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 18px;
+      }
+
+      .summary-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .summary-line {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(70, 45, 23, 0.05);
+      }
+
+      .rules-panel {
+        display: grid;
+        gap: 18px;
+        align-content: start;
+      }
+
+      .info-card {
+        border-radius: var(--radius-xl);
+        padding: 24px;
+      }
+
+      .rule-list {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      @media (max-width: 1080px) {
+        .hero,
+        .layout,
+        .board-wrap {
+          grid-template-columns: 1fr;
+        }
+
+        .status-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .page-shell {
+          width: min(100% - 20px, 1280px);
+          padding-top: 16px;
+        }
+
+        .hero-copy,
+        .hero-card,
+        .game-panel,
+        .info-card {
+          padding: 20px;
+        }
+
+        .status-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .board {
+          gap: 8px;
+          padding: 10px;
+        }
+
+        .cell {
+          border-radius: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Math Games with Bad Drawings</p>
+          <h1>Neighbors</h1>
+          <p class="hero-text">
+            Fill a 5×5 grid with a shared stream of numbers, then score by
+            building matching neighborhoods in rows and columns.
+          </p>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-label">Core Loop</div>
+          <ol>
+            <li>Reveal the next number.</li>
+            <li>Place it in any empty square.</li>
+            <li>Chase clusters without trapping future turns.</li>
+          </ol>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="game-panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-label">Interactive Board</p>
+              <h2>Play a full 25-turn game</h2>
+            </div>
+            <button id="new-game-btn" class="button button-primary" type="button">
+              New Random Game
+            </button>
+          </div>
+
+          <div class="status-grid">
+            <article class="status-card spotlight">
+              <p class="status-label">Current Call</p>
+              <div id="current-number" class="big-number">-</div>
+              <p id="turn-caption" class="status-note">Start a new game to begin.</p>
+            </article>
+            <article class="status-card">
+              <p class="status-label">Board Status</p>
+              <div class="status-value"><span id="filled-count">0</span> / 25 placed</div>
+              <p class="status-note">Click any empty square to place the current number.</p>
+            </article>
+            <article class="status-card">
+              <p class="status-label">Score</p>
+              <div class="status-value"><span id="score-total">0</span> points</div>
+              <p class="status-note">Rows and columns score separately.</p>
+            </article>
+            <article class="status-card">
+              <p class="status-label">Best Cluster</p>
+              <div class="status-value"><span id="best-cluster">0</span> cells</div>
+              <p class="status-note">Longest scoring run on the board right now.</p>
+            </article>
+          </div>
+
+          <div class="board-wrap">
+            <div id="board" class="board" aria-label="Neighbors board"></div>
+            <aside class="side-stack">
+              <div class="side-card">
+                <div class="side-card-head">
+                  <h3>Called Numbers</h3>
+                  <span id="calls-remaining" class="badge">25 left</span>
+                </div>
+                <div id="sequence-strip" class="sequence-strip"></div>
+              </div>
+
+              <div class="side-card">
+                <h3>Controls</h3>
+                <div class="button-row">
+                  <button id="undo-btn" class="button" type="button">Undo Last Move</button>
+                  <button id="reset-btn" class="button" type="button">Reset Board</button>
+                </div>
+                <label class="field-label" for="sequence-input">Custom sequence</label>
+                <p class="field-help">
+                  Enter 25 numbers from 1 to 10, separated by commas or spaces,
+                  then load them as the shared call order.
+                </p>
+                <textarea
+                  id="sequence-input"
+                  rows="4"
+                  placeholder="Example: 4, 4, 9, 2, 4, 7, 1, 10, ..."
+                ></textarea>
+                <button id="load-sequence-btn" class="button button-secondary" type="button">
+                  Load Custom Sequence
+                </button>
+                <p id="message" class="message" aria-live="polite"></p>
+              </div>
+            </aside>
+          </div>
+
+          <div class="score-explainer">
+            <h3>How scoring works on this board</h3>
+            <div id="scoring-summary" class="summary-list"></div>
+          </div>
+        </section>
+
+        <section class="rules-panel">
+          <article class="info-card">
+            <p class="panel-label">Rules</p>
+            <h2>How to play Neighbors</h2>
+            <ul class="rule-list">
+              <li>Start with an empty 5×5 grid.</li>
+              <li>Use a shared sequence of 25 random numbers from 1 to 10.</li>
+              <li>When a number is called, every player writes it into any empty square.</li>
+              <li>You must place the current number before seeing the next one.</li>
+              <li>After 25 turns, score matching neighboring groups in every row and column.</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <h3>Quick hits from the PDF</h3>
+            <ul class="rule-list">
+              <li>Format: group game</li>
+              <li>Play time: about 10 minutes</li>
+              <li>Recommended age: 6+</li>
+              <li>Objective: make neighbors</li>
+              <li>Winner: the player with the most points</li>
+              <li>Components: pencil, paper, and the optional Neighbors gameboard</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <h3>Scoring</h3>
+            <ul class="rule-list">
+              <li>A scoring group is any run of 2 or more identical numbers touching horizontally in a row.</li>
+              <li>The same rule applies vertically in each column.</li>
+              <li>A group scores the sum of its cells. Example: three neighboring 4s score 12 points.</li>
+              <li>Rows and columns are scored separately.</li>
+              <li>A square can help one row-group and one column-group, so cross-shaped clusters are powerful.</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <h3>Math look-fors from the PDF</h3>
+            <ul class="rule-list">
+              <li>Counting on</li>
+              <li>Make a ten</li>
+              <li>Doubles and near doubles</li>
+              <li>Compensation</li>
+              <li>Breaking apart numbers</li>
+              <li>Place value and expanded form</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <h3>Try these variations</h3>
+            <ul class="rule-list">
+              <li>Change the board size and compare how strategy shifts.</li>
+              <li>Use a different neighbor rule, including diagonal adjacency.</li>
+              <li>Apply a pattern rule like +1, -1, or ×2 before placing a number.</li>
+              <li>Swap dice for a deck of cards with face cards removed.</li>
+              <li>Create your own classroom variation and keep the shared sequence rule.</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <h3>What this app includes</h3>
+            <ul class="rule-list">
+              <li>A playable single-board version of the game.</li>
+              <li>Automatic row and column scoring with highlighted clusters.</li>
+              <li>Undo, reset, and custom shared-sequence support for classroom or family play.</li>
+              <li>A live call strip so multiple players can follow the same order if needed.</li>
+            </ul>
+          </article>
+        </section>
+      </main>
+    </div>
+    <script>
+      const BOARD_SIZE = 5;
+      const TURN_COUNT = BOARD_SIZE * BOARD_SIZE;
+      const MIN_VALUE = 1;
+      const MAX_VALUE = 10;
+
+      const boardEl = document.querySelector("#board");
+      const currentNumberEl = document.querySelector("#current-number");
+      const turnCaptionEl = document.querySelector("#turn-caption");
+      const filledCountEl = document.querySelector("#filled-count");
+      const scoreTotalEl = document.querySelector("#score-total");
+      const bestClusterEl = document.querySelector("#best-cluster");
+      const callsRemainingEl = document.querySelector("#calls-remaining");
+      const scoringSummaryEl = document.querySelector("#scoring-summary");
+      const sequenceStripEl = document.querySelector("#sequence-strip");
+      const sequenceInputEl = document.querySelector("#sequence-input");
+      const messageEl = document.querySelector("#message");
+      const newGameBtn = document.querySelector("#new-game-btn");
+      const undoBtn = document.querySelector("#undo-btn");
+      const resetBtn = document.querySelector("#reset-btn");
+      const loadSequenceBtn = document.querySelector("#load-sequence-btn");
+
+      const state = {
+        board: Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null)),
+        sequence: [],
+        turnIndex: 0,
+        history: [],
+      };
+
+      function randomValue() {
+        return Math.floor(Math.random() * MAX_VALUE) + MIN_VALUE;
+      }
+
+      function buildRandomSequence() {
+        return Array.from({ length: TURN_COUNT }, randomValue);
+      }
+
+      function resetBoard(sequence = buildRandomSequence(), message = "New game ready.") {
+        state.board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
+        state.sequence = sequence.slice(0, TURN_COUNT);
+        state.turnIndex = 0;
+        state.history = [];
+        sequenceInputEl.value = state.sequence.join(", ");
+        setMessage(message);
+        render();
+      }
+
+      function setMessage(message) {
+        messageEl.textContent = message;
+      }
+
+      function parseSequence(rawText) {
+        const parts = rawText
+          .split(/[\s,]+/)
+          .map((part) => part.trim())
+          .filter(Boolean);
+
+        if (parts.length !== TURN_COUNT) {
+          throw new Error(`Please enter exactly ${TURN_COUNT} numbers.`);
+        }
+
+        return parts.map((part) => {
+          const value = Number(part);
+          if (!Number.isInteger(value) || value < MIN_VALUE || value > MAX_VALUE) {
+            throw new Error("Every value must be a whole number from 1 to 10.");
+          }
+          return value;
+        });
+      }
+
+      function placeCurrentNumber(row, col) {
+        const currentNumber = state.sequence[state.turnIndex];
+        if (currentNumber == null || state.board[row][col] != null) {
+          return;
+        }
+
+        state.board[row][col] = currentNumber;
+        state.history.push({ row, col, value: currentNumber });
+        state.turnIndex += 1;
+        setMessage(
+          state.turnIndex === TURN_COUNT
+            ? "Board complete. Final score locked in."
+            : `Placed ${currentNumber}. Choose a square for the next call.`
+        );
+        render();
+      }
+
+      function undoMove() {
+        const lastMove = state.history.pop();
+        if (!lastMove) {
+          return;
+        }
+
+        state.board[lastMove.row][lastMove.col] = null;
+        state.turnIndex -= 1;
+        setMessage(`Removed ${lastMove.value} from row ${lastMove.row + 1}, column ${lastMove.col + 1}.`);
+        render();
+      }
+
+      function collectLineGroups(lineValues, fixedIndex, axis) {
+        const groups = [];
+        let start = 0;
+
+        while (start < lineValues.length) {
+          const value = lineValues[start];
+          if (value == null) {
+            start += 1;
+            continue;
+          }
+
+          let end = start + 1;
+          while (end < lineValues.length && lineValues[end] === value) {
+            end += 1;
+          }
+
+          const length = end - start;
+          if (length >= 2) {
+            const cells = [];
+            for (let index = start; index < end; index += 1) {
+              cells.push(axis === "row" ? [fixedIndex, index] : [index, fixedIndex]);
+            }
+            groups.push({
+              axis,
+              value,
+              length,
+              score: value * length,
+              cells,
+            });
+          }
+
+          start = end;
+        }
+
+        return groups;
+      }
+
+      function computeScoring() {
+        const groups = [];
+
+        for (let row = 0; row < BOARD_SIZE; row += 1) {
+          groups.push(...collectLineGroups(state.board[row], row, "row"));
+        }
+
+        for (let col = 0; col < BOARD_SIZE; col += 1) {
+          const columnValues = state.board.map((row) => row[col]);
+          groups.push(...collectLineGroups(columnValues, col, "col"));
+        }
+
+        const cellFlags = new Map();
+        for (const group of groups) {
+          for (const [row, col] of group.cells) {
+            const key = `${row}-${col}`;
+            const entry = cellFlags.get(key) ?? { row: false, col: false };
+            entry[group.axis] = true;
+            cellFlags.set(key, entry);
+          }
+        }
+
+        return {
+          groups,
+          totalScore: groups.reduce((sum, group) => sum + group.score, 0),
+          longestGroup: groups.reduce((best, group) => Math.max(best, group.length), 0),
+          cellFlags,
+        };
+      }
+
+      function renderBoard(scoring) {
+        boardEl.innerHTML = "";
+
+        for (let row = 0; row < BOARD_SIZE; row += 1) {
+          for (let col = 0; col < BOARD_SIZE; col += 1) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "cell";
+            const value = state.board[row][col];
+            const isFilled = value != null;
+            const cellState = scoring.cellFlags.get(`${row}-${col}`);
+
+            if (isFilled) {
+              button.textContent = String(value);
+              button.classList.add("cell-filled");
+            } else {
+              button.textContent = "";
+              button.setAttribute("aria-label", `Empty row ${row + 1} column ${col + 1}`);
+            }
+
+            if (cellState?.row && cellState?.col) {
+              button.classList.add("cell-both-score");
+            } else if (cellState?.row) {
+              button.classList.add("cell-row-score");
+            } else if (cellState?.col) {
+              button.classList.add("cell-col-score");
+            }
+
+            button.disabled = isFilled || state.turnIndex >= TURN_COUNT;
+            button.addEventListener("click", () => placeCurrentNumber(row, col));
+            boardEl.appendChild(button);
+          }
+        }
+      }
+
+      function renderSequence() {
+        sequenceStripEl.innerHTML = "";
+        state.sequence.forEach((value, index) => {
+          const chip = document.createElement("div");
+          chip.className = "sequence-chip";
+          chip.textContent = String(value);
+          if (index < state.turnIndex) {
+            chip.classList.add("done");
+          } else if (index === state.turnIndex) {
+            chip.classList.add("current");
+          }
+          sequenceStripEl.appendChild(chip);
+        });
+      }
+
+      function renderSummary(scoring) {
+        scoringSummaryEl.innerHTML = "";
+
+        if (scoring.groups.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "summary-line";
+          empty.textContent = "No scoring groups yet. You need at least two matching neighbors in a row or column.";
+          scoringSummaryEl.appendChild(empty);
+          return;
+        }
+
+        scoring.groups.forEach((group, index) => {
+          const line = document.createElement("div");
+          line.className = "summary-line";
+          const orientation = group.axis === "row" ? "Row" : "Column";
+          const anchor = group.axis === "row" ? group.cells[0][0] + 1 : group.cells[0][1] + 1;
+          line.textContent = `${index + 1}. ${orientation} ${anchor}: ${group.length} matching ${group.value}s = ${group.score} points.`;
+          scoringSummaryEl.appendChild(line);
+        });
+      }
+
+      function render() {
+        const scoring = computeScoring();
+        const filledCount = state.history.length;
+        const remaining = TURN_COUNT - state.turnIndex;
+        const currentNumber = state.sequence[state.turnIndex] ?? null;
+
+        renderBoard(scoring);
+        renderSequence();
+        renderSummary(scoring);
+
+        currentNumberEl.textContent = currentNumber ?? "-";
+        turnCaptionEl.textContent =
+          currentNumber == null
+            ? "All 25 calls placed."
+            : `Turn ${state.turnIndex + 1} of ${TURN_COUNT}`;
+        filledCountEl.textContent = String(filledCount);
+        scoreTotalEl.textContent = String(scoring.totalScore);
+        bestClusterEl.textContent = String(scoring.longestGroup);
+        callsRemainingEl.textContent = `${remaining} left`;
+        undoBtn.disabled = state.history.length === 0;
+        resetBtn.disabled = state.sequence.length === 0;
+      }
+
+      newGameBtn.addEventListener("click", () => resetBoard(buildRandomSequence(), "Fresh random sequence loaded."));
+
+      resetBtn.addEventListener("click", () => {
+        if (state.sequence.length === 0) {
+          return;
+        }
+        resetBoard(state.sequence, "Board cleared. Sequence preserved.");
+      });
+
+      undoBtn.addEventListener("click", undoMove);
+
+      loadSequenceBtn.addEventListener("click", () => {
+        try {
+          const sequence = parseSequence(sequenceInputEl.value);
+          resetBoard(sequence, "Custom sequence loaded.");
+        } catch (error) {
+          setMessage(error.message);
+        }
+      });
+
+      resetBoard(buildRandomSequence(), "Neighbors is ready. Place the first called number anywhere.");
+    </script>
+  </body>
+</html>
